@@ -21,28 +21,42 @@ int main(void){
         perror("建立连接失败!\n");
         return -1;
     }else{
-			//recv(sock_fd, buffer, sizeof(buffer), 0);
-      //printf("分配到ip:%s\n", buffer);
+			recv(sock_fd, buffer, sizeof(buffer), 0);
+      printf("分配到ip:%s\n", buffer);
 			puts("建立连接成功");
 		}
 		int epfd = epoll_create(MAX_EVENTS);
-		ev.events = EPOLLIN | EPOLLET;
+		ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 		ev.data.fd = sock_fd;
 		epoll_ctl(epfd, EPOLL_CTL_ADD, sock_fd,&ev);
 		while(1){
 			int fds = epoll_wait(epfd, events, 256, 500);
-			send(sock_fd, "yes", 32, 0);
-			sleep(1);
 			for (int i = 0; i < fds; ++i) {
 					if (events[i].events & EPOLLIN) {
 						recv(sock_fd, buffer, sizeof(buffer), 1024);
 						puts(buffer);
 						ev.events = EPOLLOUT | EPOLLET;
+						ev.data.fd = events[i].data.fd;
 						epoll_ctl(epfd, EPOLL_CTL_MOD, sock_fd, &ev);
-					}else if(events[i].events & EPOLLOUT){
-						send(epfd, buffer, sizeof(buffer), 0);
-						ev.events = EPOLLIN | EPOLLET;
-						epoll_ctl(epfd, EPOLL_CTL_MOD, sock_fd, &ev);
+					}
+					if(events[i].events & EPOLLOUT){
+						memset(buffer, 0, sizeof(buffer));
+						fputs("ping ", stdout);
+						fgets(buffer, sizeof(buffer), stdin);
+						*strchr(buffer, '\n') = '\0';
+						puts(buffer);
+						if (strcmp(buffer, "q") == 0) {
+							shutdown(sock_fd, 0);
+							fputs("EIXT\n", stdout);
+							epoll_ctl(epfd, EPOLL_CTL_DEL, sock_fd, &ev);
+							close(sock_fd);
+							exit(EXIT_SUCCESS);
+						}else{
+							send(sock_fd, buffer, sizeof(buffer), 0);
+							ev.events = EPOLLIN | EPOLLET;
+							ev.data.fd = events[i].data.fd;
+							epoll_ctl(epfd, EPOLL_CTL_MOD, sock_fd, &ev);
+						}
 					}
 			}
 		}

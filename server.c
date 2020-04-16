@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <sys/epoll.h>
 #define MAX_EVENTS 255
+int sendCount = 10;
 void* run(void* client);
 ClientSocket** ips;
 int assignment(int client_fd);
@@ -43,7 +44,7 @@ int main(void)
 				if (ip_no == -1) {
 					break;
 				}
-				ev.events = EPOLLIN  | EPOLLET;
+				ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 				ev.data.fd = client_fd;
 				epoll_ctl(ep_fd, EPOLL_CTL_ADD, client_fd, &ev);
 			}
@@ -54,6 +55,7 @@ int main(void)
 					char buffer[1024];
 					memset(buffer, 0, sizeof(buffer));
 					int status = recv(events[i].data.fd, buffer,sizeof(buffer), 0);
+					puts(buffer);
 					if(status == 0)
 					{
 						for (int j = 2; j < 255; ++j) {
@@ -67,13 +69,16 @@ int main(void)
 					}
 					else
 					{
+						fputs(buffer, stdout);
 						ev.events = EPOLLOUT | EPOLLET;
+						ev.data.fd = events[i].data.fd;
 						epoll_ctl(ep_fd, EPOLL_CTL_MOD, events[i].data.fd, &ev);
 					}
 				}
-				else if (events[i].events & EPOLLOUT){
-					send(events[i].data.fd, "server out", 32, 0);
+				if (events[i].events & EPOLLOUT){
+					send(events[i].data.fd, "out", 32, 0);
 					ev.events = EPOLLIN | EPOLLET;
+					ev.data.fd = events[i].data.fd;
 					epoll_ctl(ep_fd, EPOLL_CTL_MOD, events[i].data.fd, &ev);
 				}
       }
@@ -94,9 +99,11 @@ int assignment(int client_fd)
 			strcat(ips[i]->ip,"192.168.2.");
 			strcat(ips[i]->ip, itc(i));
 			printf("接入客户端:%s\n",ips[i]->ip);
+			send(client_fd, ips[i]->ip, 32, 0);
 			return i;
 		}
 	}
 	fputs("没有ip可分配ip\n", stdout);
+	send(client_fd, "没有可分配ip", 32, 0);
 	return -1;
 }
