@@ -31,7 +31,7 @@ int main(void){
 		epoll_ctl(epfd, EPOLL_CTL_ADD, sock_fd,&ev);
 		while(1){
 			int fds = epoll_wait(epfd, events, 256, 500);
-			printf("%d\n",fds);
+			send(sock_fd, "yes", 32, 0);
 			sleep(1);
 			for (int i = 0; i < fds; ++i) {
 					if (events[i].events & EPOLLIN) {
