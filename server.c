@@ -28,7 +28,7 @@ int main(void)
 	puts("Server端正在监听端口...:8888");
 	int ep_fd = epoll_create(MAX_EVENTS);
 	struct epoll_event ev,events[MAX_EVENTS];
-	ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+	ev.events = EPOLLIN | EPOLLET;
 	ev.data.fd = sock_fd;
 	epoll_ctl(ep_fd, EPOLL_CTL_ADD, sock_fd, &ev);
 	while (1)
@@ -43,7 +43,7 @@ int main(void)
 				if (ip_no == -1) {
 					break;
 				}
-				ev.events = EPOLLIN | EPOLLET;
+				ev.events = EPOLLIN  | EPOLLET;
 				ev.data.fd = client_fd;
 				epoll_ctl(ep_fd, EPOLL_CTL_ADD, client_fd, &ev);
 			}
@@ -67,8 +67,14 @@ int main(void)
 					}
 					else
 					{
-						fputs(buffer,stdout);
+						ev.events = EPOLLOUT | EPOLLET;
+						epoll_ctl(ep_fd, EPOLL_CTL_MOD, events[i].data.fd, &ev);
 					}
+				}
+				else if (events[i].events & EPOLLOUT){
+					send(events[i].data.fd, "server out", 32, 0);
+					ev.events = EPOLLIN | EPOLLET;
+					epoll_ctl(ep_fd, EPOLL_CTL_MOD, events[i].data.fd, &ev);
 				}
       }
     }
