@@ -24,5 +24,5 @@ typedef struct Icmp{
 	uint64_t end_time;
 	char data[8];
 }Icmp;
-void set_pkg(Icmp* icmp);
+void set_pkg(Icmp* icmp,char* src_ip,char* dest_ip);
 #endif

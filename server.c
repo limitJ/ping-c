@@ -1,6 +1,5 @@
 #include "csocket.h"
 #include "clientSocket.h"
-#include "result.h"
 #include "tools.h"
 #include <stdlib.h>
 #include <pthread.h>
